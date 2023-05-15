@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 
 #define RED "\x1b[01;31m"
 #define GRE "\x1b[01;32m"
@@ -12,6 +14,7 @@
 #define RES "\x1b[0m"
 
 int main(int argc, char * argv[]) {
+        srand((unsigned int) time(NULL));
         if (argc != 2) {
                 printf("Usage: %s <shellcode_file>\n", argv[0]);
                 return 1;
@@ -24,10 +27,9 @@ int main(int argc, char * argv[]) {
         }
 
         fseek(file, 0, SEEK_END);
-        long file_size = ftell(file);
+        int file_size = ftell(file);
         fseek(file, 0, SEEK_SET);
 
-        srand((unsigned int) time(NULL));
         unsigned char shellcode[file_size + 1];
         fread(shellcode, 1, file_size, file);
         fclose(file);
@@ -42,9 +44,21 @@ int main(int argc, char * argv[]) {
                 CYA "ENCODING SHELLCODE...\n");
 
         int ROT = rand() % 8 + 1, DEC = rand() & 0xff, kk = 0, ll = 0, l = 0, k = 0, i;
+        unsigned char * key = (unsigned char * ) malloc(sizeof(unsigned char) * EVP_MAX_KEY_LENGTH);
+        unsigned char * iv = (unsigned char * ) malloc(sizeof(unsigned char) * EVP_MAX_IV_LENGTH);
+        unsigned char * ciphertext = (unsigned char * ) malloc(sizeof(unsigned char) * (file_size + EVP_MAX_BLOCK_LENGTH));
+        EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
 
-        unsigned char XORKEY[sizeof(shellcode)];
-        for (i = 0; i < sizeof(shellcode); i++) {
+        RAND_bytes(key, EVP_MAX_KEY_LENGTH);
+        RAND_bytes(iv, EVP_MAX_IV_LENGTH);
+
+        EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
+        EVP_EncryptUpdate(ctx, ciphertext, & file_size, shellcode, file_size);
+        EVP_EncryptFinal_ex(ctx, ciphertext + file_size, & kk);
+        EVP_CIPHER_CTX_free(ctx);
+
+        unsigned char XORKEY[sizeof(ciphertext)];
+        for (i = 0; i < sizeof(ciphertext); i++) {
                 XORKEY[i] = rand() & 0xff;
         }
 
@@ -60,7 +74,7 @@ int main(int argc, char * argv[]) {
                 memcpy( & shellcode3[0], (char * ) & buffer[0], sizeof(buffer[0]));
                 k = i % 2;
                 if (k == 0) {
-                        shellcode2[i] = shellcode[l];
+                        shellcode2[i] = ciphertext[l];
                         l++;
                 } else if (k != 0) {
                         shellcode2[i] = shellcode3[0];
@@ -93,36 +107,42 @@ int main(int argc, char * argv[]) {
                 RES "\n"
                 BLU "[+]"
                 GRE " Shellcode Length: "
-                RED "%lu "
+                RED "%d "
                 YEL "~> "
-                RED "%lu\n", file_size, (file_size) * 2);
+                RED "%d\n", file_size, (file_size) * 2);
+        printf(
+                MAG "unsigned char"
+                RES " shellcode[]"
+                YEL " = "
+                RES "{ ");
         for (i = 0; i < (file_size) * 2; i++) {
-                if (i == 0)
-                        printf(
-                                MAG "unsigned char"
-                                RES " shellcode[]"
-                                YEL " = "
-                                RES "{ "
-                                RED "0x%02x, "
-                                RES "", shellcode4[i]);
-                if (i > 0 && i < ((file_size) * 2) - 1)
-                        printf(RED "0x%02x, "
-                                RES "", shellcode4[i]);
-                if (i == ((file_size) * 2) - 1)
-                        printf(RED "0x%02x"
-                                RES " };\n", shellcode4[i]);
+                printf(RED "0x%02x%s", shellcode4[i], i == (file_size) * 2 - 1 ? RES " };\n" : ", ");
         }
-
         printf(
                 MAG "unsigned char"
                 RES " key[]"
                 YEL " = "
                 RES "{ ");
-        for (int g = 0; g < sizeof(XORKEY); g++) {
-                if (g == sizeof(XORKEY) - 1)
-                        printf(RED "0x%02x" RES " };\n", XORKEY[g]);
-                else
-                        printf(RED "0x%02x, ", XORKEY[g]);
+        for (i = 0; i < EVP_MAX_KEY_LENGTH; i++) {
+                printf(RED "0x%02x%s", key[i], i == EVP_MAX_KEY_LENGTH - 1 ? RES " };\n" : ", ");
+        }
+
+        printf(
+                MAG "unsigned char"
+                RES " iv[]"
+                YEL " = "
+                RES "{ ");
+        for (i = 0; i < EVP_MAX_IV_LENGTH; i++) {
+                printf(RED "0x%02x%s", iv[i], i == EVP_MAX_IV_LENGTH - 1 ? RES " };\n" : ", ");
+        }
+
+        printf(
+                MAG "unsigned char"
+                RES " xorkey[]"
+                YEL " = "
+                RES "{ ");
+        for (i = 0; i < sizeof(XORKEY); i++) {
+                printf(RED "0x%02x%s", XORKEY[i], i == sizeof(XORKEY) - 1 ? RES " };\n" : ", ");
         }
         printf(
                 MAG "int"
@@ -141,7 +161,12 @@ int main(int argc, char * argv[]) {
                 RES " MBYTE "
                 RED "0x%02x"
                 RES ";\n", buffer[0]);
+        free(key);
+        free(iv);
+        free(ciphertext);
+        free(buffer);
+        free(shellcode2);
+        free(shellcode4);
 
         return 0;
 }
-
