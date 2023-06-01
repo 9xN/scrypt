@@ -1,4 +1,4 @@
-# SCRYPT: An Introduction to Shellcode Encoding
+# SCRYPT: An Introduction to Shellcode Encoding && Encryption
 
 ## Introduction
 SCRYPT is a simple shellcode encryptor/encoder that uses the OpenSSL library to encrypt a shellcode using the AES-256-CBC encryption algorithm then applies several encoding techniques to obfuscate a given shellcode file. This encrypted/encoded shellcode can be used for both legitimate and malicious purposes, such as exploiting system vulnerabilities or executing arbitrary code. 
@@ -82,22 +82,22 @@ source ~/.bash_profile
 ## Compiling
 To compile the program, use the following command:
 ```bash
-gcc -o scrypt scrypt.c -lcrypto
+gcc -o scrypt scrypt.c -lcrypto -lssl
 ```
 IF THAT DOES NOT WORK TRY THIS:
 
 ```bash
-gcc -o scrypt scrypt.c -I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib -lssl -lcrypto
+gcc -o scrypt scrypt.c -I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib -lcrypto -lssl
 ```
 
 ## Usage
 To use this program, run the following command:
 ```
-./scrypt shellcode.bin
+./scrypt <shellcode_file> <num_iterations>
 ```
-where `shellcode.bin` is the name of the binary file containing the shellcode to be encoded.
-
-After running the program, the encrypted/encoded shellcode will be written to your terminal in C-style format. You can copy and paste this encrypted/encoded shellcode into your own C program and use it for your own purposes. (After having decoded it, of course! (I will be adding a decoder program soon.))
+Where `shellcode_file` is the name of the file containing the shellcode to be encrypted/encoded (note: this can have any file extension).
+&& `num_iterations` is the number of times the shellcode will be encoded (note: this must be a positive integer).
+After running the program, the encrypted/encoded shellcode will be written to your terminal in C-style format. You can copy and paste this encrypted/encoded shellcode into your own C program and use it for your own purposes. An example decoder is provided in the `decoder.c` file, where the user can copy paste the encrypted/encoded shellcode into the allocated space at the top of the file and run the program to decrypt/decode the shellcode and store it inside of the `decrypted_shellcode` unsigned char variable (you can compile this program the same way as SCRYPT but in the template decoder provided you do not need to provide any arguments).
 
 ## Encryption Algorithm
 The code uses the OpenSSL library to encrypt a shellcode using the AES-256-CBC encryption algorithm. 
@@ -113,7 +113,7 @@ SCRYPT uses the following encoding techniques to obfuscate the shellcode:
 * **XOR Encoding**: SCRYPT generates a random XOR key of the same size as the shellcode and applies XOR operation to each byte of the shellcode with a corresponding byte of the XOR key. This technique can make it harder for antivirus software to detect the shellcode.
 * **ROT Encoding**: SCRYPT generates a random number between 1 and 8 and performs a rotation (shift) operation on each byte of the shellcode by that amount. This further obfuscates the shellcode.
 * **DEC Encoding**: SCRYPT subtracts a random value from each bit of the shellcode to produce a decimal representation of the original value. This encoding technique is also known as decimal encoding or decimalization.
-* **Byte Insertion Encoding**: This technique involves inserting a random byte after each byte in the shellcode. In SCRYPT, a new buffer is created for the encoded shellcode, and a random byte is inserted after every other byte.
+* **NOT Encoding**: SCRYPT iterates over the bytes of the input data and applies the bitwise negation (~) operator to each byte. This operation flips the bits of the byte, changing 0s to 1s and vice versa. The result is a transformed version of the original shellcode.
 
 ## Shellcode Payloads
 A shellcode is a small piece of code that is designed to perform a specific task or execute arbitrary code when injected into a vulnerable process or system. Shellcode payloads can be used for both legitimate and malicious purposes, depending on the context and intent of the user.

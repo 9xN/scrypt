@@ -1,172 +1,179 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
+#include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-#define RED "\x1b[01;31m"
-#define GRE "\x1b[01;32m"
-#define YEL "\x1b[01;33m"
-#define BLU "\x1b[01;34m"
-#define MAG "\x1b[01;35m"
-#define CYA "\x1b[01;36m"
-#define RES "\x1b[0m"
+#define RED "\033[01;31m"
+#define GRE "\033[01;32m"
+#define YEL "\033[01;33m"
+#define BLU "\033[01;34m"
+#define MAG "\033[01;35m"
+#define CYA "\033[01;36m"
+#define RES "\033[0m"
 
-int main(int argc, char * argv[]) {
-        srand((unsigned int) time(NULL));
-        if (argc != 2) {
-                printf("Usage: %s <shellcode_file>\n", argv[0]);
-                return 1;
-        }
+void handleErrors() {
+    ERR_print_errors_fp(stderr);
+    abort();
+}
 
-        FILE * file = fopen(argv[1], "rb");
-        if (!file) {
-                perror("Error opening file");
-                return 1;
-        }
+void print_banner() {
+    printf("\033[38;5;16m \033[38;5;16m┌\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┌\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┬\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┬\033[38;5;16m \033[38;5;16m┬\033[38;5;16m \033[38;5;16m┌\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┌\033[38;5;16m┬\033[38;5;16m┐\n\033[38;5;16m \033[38;5;16m└\033[38;5;16m─\033[38;5;16m┐\033[38;5;17m \033[38;5;17m│\033[38;5;17m \033[38;5;17m \033[38;5;17m \033[38;5;17m├\033[38;5;17m┬\033[38;5;17m┘\033[38;5;17m \033[38;5;17m└\033[38;5;17m┬\033[38;5;17m┘\033[38;5;17m \033[38;5;17m├\033[38;5;17m─\033[38;5;17m┘\033[38;5;17m \033[38;5;17m \033[38;5;17m│\033[38;5;17m\n\033[38;5;17m \033[38;5;17m└\033[38;5;17m─\033[38;5;17m┘\033[38;5;18m \033[38;5;18m└\033[38;5;18m─\033[38;5;18m┘\033[38;5;18m \033[38;5;18m┴\033[38;5;18m└\033[38;5;18m─\033[38;5;18m \033[38;5;18m \033[38;5;18m┴\033[38;5;18m \033[38;5;18m \033[38;5;18m┴\033[38;5;18m \033[38;5;18m \033[38;5;18m \033[38;5;18m \033[38;5;18m┴\033[38;5;18m\n");
+    printf(YEL "~> " GRE "Made by: " MAG "github.com/9xN\n" RED "----------------------------" RES "\n" CYA "ENCODING/ENCRYPTING SHELLCODE...\n");
+}
 
-        fseek(file, 0, SEEK_END);
-        int file_size = ftell(file);
-        fseek(file, 0, SEEK_SET);
-
-        unsigned char shellcode[file_size + 1];
-        fread(shellcode, 1, file_size, file);
+unsigned char *readShellcodeFromFile(const char *filename, size_t *original_length) {
+    FILE *file;
+    unsigned char *shellcode = NULL;
+    size_t file_size;
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("Failed to open the file.\n");
+        return NULL;
+    }
+    fseek(file, 0, SEEK_END);
+    file_size = ftell(file);
+    rewind(file);
+    shellcode = (unsigned char *)malloc(file_size);
+    if (shellcode == NULL) {
+        printf("Failed to allocate memory for shellcode.\n");
         fclose(file);
-        shellcode[file_size] = '\0';
-
-        printf(BLU "[ SCRYPT ]\n"
-                YEL "~> "
-                GRE "Made by: "
-                MAG "github.com/9xN\n"
-                RED "----------------------------"
-                RES "\n"
-                CYA "ENCODING SHELLCODE...\n");
-
-        int ROT = rand() % 8 + 1, DEC = rand() & 0xff, kk = 0, ll = 0, l = 0, k = 0, i;
-        unsigned char * key = (unsigned char * ) malloc(sizeof(unsigned char) * EVP_MAX_KEY_LENGTH);
-        unsigned char * iv = (unsigned char * ) malloc(sizeof(unsigned char) * EVP_MAX_IV_LENGTH);
-        unsigned char * ciphertext = (unsigned char * ) malloc(sizeof(unsigned char) * (file_size + EVP_MAX_BLOCK_LENGTH));
-        EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
-
-        RAND_bytes(key, EVP_MAX_KEY_LENGTH);
-        RAND_bytes(iv, EVP_MAX_IV_LENGTH);
-
-        EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
-        EVP_EncryptUpdate(ctx, ciphertext, & file_size, shellcode, file_size);
-        EVP_EncryptFinal_ex(ctx, ciphertext + file_size, & kk);
-        EVP_CIPHER_CTX_free(ctx);
-
-        unsigned char XORKEY[sizeof(ciphertext)];
-        for (i = 0; i < sizeof(ciphertext); i++) {
-                XORKEY[i] = rand() & 0xff;
+        return NULL;
+    }
+    size_t i = 0;
+    char hexByte[3];
+    char temp;
+    while ((temp = fgetc(file)) != EOF) {
+        if (temp == '"' || temp == '\n' || temp == '\0') {
+            continue;
         }
-
-        unsigned char * buffer = (unsigned char * ) malloc(sizeof(unsigned char));
-        unsigned char * shellcode2 = (unsigned char * ) malloc(sizeof(char * ) * (((file_size) * 2) / 8));
-        memset(shellcode2, '\0', sizeof(char * ) * (((file_size) * 2) / 8));
-        unsigned char shellcode3[] = "\xbb";
-        unsigned char * shellcode4 = (unsigned char * ) malloc(sizeof(char * ) * (((file_size) * 2) / 8));
-        memset(shellcode4, '\0', sizeof(char * ) * (((file_size) * 2) / 8));
-
-        for (i = 0; i < ((file_size) * 2); i++) {
-                buffer[0] = rand() & 0xff;
-                memcpy( & shellcode3[0], (char * ) & buffer[0], sizeof(buffer[0]));
-                k = i % 2;
-                if (k == 0) {
-                        shellcode2[i] = ciphertext[l];
-                        l++;
-                } else if (k != 0) {
-                        shellcode2[i] = shellcode3[0];
-                }
+        hexByte[0] = temp;
+        hexByte[1] = fgetc(file);
+        hexByte[2] = '\0';
+        unsigned char byte = (unsigned char)strtol(hexByte, NULL, 16);
+        if (byte != '\0') {
+            shellcode[i] = byte;
+            i++;
         }
+    }
+    fclose(file);
+    *original_length = i;
+    return shellcode;
+}
 
-        buffer[0] = rand() & 0xff;
+void xor_encoding(unsigned char *shellcode, size_t length, unsigned char *xorkey, size_t xorkey_length) {
+    for (size_t i = 0; i < length; i++) {
+        shellcode[i] ^= xorkey[i % xorkey_length];
+    }
+}
 
-        for (i = 0; i < (file_size) * 2; i++) {
-                if (kk == sizeof(XORKEY)) kk = 0;
-                shellcode2[i] = shellcode2[i] ^ XORKEY[kk];
-                shellcode2[i] = shellcode2[i] ^ buffer[0];
-                shellcode2[i] = shellcode2[i] - DEC;
-                shellcode2[i] = ~shellcode2[i];
-                shellcode2[i] = (shellcode2[i] << ROT) | (shellcode2[i] >> sizeof(shellcode2[i]) * (8 - ROT));
+void not_encoding(unsigned char *shellcode, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        shellcode[i] = ~shellcode[i];
+    }
+}
 
-                if (shellcode2[i] == 0) {
-                        ll++;
-                        break;
-                }
+void rot_encoding(unsigned char *shellcode, size_t length, unsigned int rotation) {
+    for (size_t i = 0; i < length; i++) {
+        shellcode[i] = (shellcode[i] << rotation) | (shellcode[i] >> (8 - rotation));
+    }
+}
 
-                kk++;
+void dec_encoding(unsigned char *shellcode, size_t length, unsigned char decrement) {
+    for (size_t i = 0; i < length; i++) {
+        shellcode[i] -= decrement;
+    }
+}
+
+void sanitize_shellcode(unsigned char *shellcode, size_t *length) {
+    unsigned char *sanitized = (unsigned char *)malloc(*length);
+    size_t j = 0;
+    for (size_t i = 0; i < *length; i++) {
+        if (shellcode[i] != '\0') {
+            sanitized[j++] = shellcode[i];
         }
+    }
+    *length = j;
+    memcpy(shellcode, sanitized, *length);
+    free(sanitized);
+}
 
-        for (i = 0; i < (file_size) * 2; i++) {
-                memcpy( & shellcode4[i], (unsigned char * ) & shellcode2[i], sizeof(shellcode2[i]));
-        }
+void encrypt_aes_cbc(unsigned char *plaintext, int plaintext_len, unsigned char *aeskey, unsigned char *iv, unsigned char *ciphertext, int *ciphertext_len) {
+    EVP_CIPHER_CTX *ctx;
+    int len;
+    if (!(ctx = EVP_CIPHER_CTX_new()))
+        handleErrors();
+    if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, aeskey, iv))
+        handleErrors();
+    if (1 != EVP_EncryptUpdate(ctx, ciphertext, ciphertext_len, plaintext, plaintext_len))
+        handleErrors();
+    if (1 != EVP_EncryptFinal_ex(ctx, ciphertext + *ciphertext_len, &len))
+        handleErrors();
+    *ciphertext_len += len;
+    EVP_CIPHER_CTX_free(ctx);
+}
 
-        printf(CYA "SHELLCODE ENCODED:"
-                RES "\n"
-                BLU "[+]"
-                GRE " Shellcode Length: "
-                RED "%d "
-                YEL "~> "
-                RED "%d\n", file_size, (file_size) * 2);
-        printf(
-                MAG "unsigned char"
-                RES " shellcode[]"
-                YEL " = "
-                RES "{ ");
-        for (i = 0; i < (file_size) * 2; i++) {
-                printf(RED "0x%02x%s", shellcode4[i], i == (file_size) * 2 - 1 ? RES " };\n" : ", ");
-        }
-        printf(
-                MAG "unsigned char"
-                RES " key[]"
-                YEL " = "
-                RES "{ ");
-        for (i = 0; i < EVP_MAX_KEY_LENGTH; i++) {
-                printf(RED "0x%02x%s", key[i], i == EVP_MAX_KEY_LENGTH - 1 ? RES " };\n" : ", ");
-        }
+void format_and_print(unsigned char *shellcode, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        printf("\\x%02x", shellcode[i]);
+    }
+}
 
-        printf(
-                MAG "unsigned char"
-                RES " iv[]"
-                YEL " = "
-                RES "{ ");
-        for (i = 0; i < EVP_MAX_IV_LENGTH; i++) {
-                printf(RED "0x%02x%s", iv[i], i == EVP_MAX_IV_LENGTH - 1 ? RES " };\n" : ", ");
-        }
-
-        printf(
-                MAG "unsigned char"
-                RES " xorkey[]"
-                YEL " = "
-                RES "{ ");
-        for (i = 0; i < sizeof(XORKEY); i++) {
-                printf(RED "0x%02x%s", XORKEY[i], i == sizeof(XORKEY) - 1 ? RES " };\n" : ", ");
-        }
-        printf(
-                MAG "int"
-                RES " ROT"
-                YEL " = "
-                RED "%d"
-                RES ";\n", ROT);
-        printf(
-                MAG "int"
-                RES " DEC"
-                YEL " = "
-                RED "%d"
-                RES ";\n", DEC);
-        printf(
-                MAG "#define"
-                RES " MBYTE "
-                RED "0x%02x"
-                RES ";\n", buffer[0]);
-        free(key);
-        free(iv);
-        free(ciphertext);
-        free(buffer);
-        free(shellcode2);
-        free(shellcode4);
-
-        return 0;
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        printf("Usage: %s <shellcode_file> <num_iterations>\n", argv[0]);
+        return 1;
+    }
+    print_banner();
+    srand((unsigned int)time(NULL));
+    char *filename = argv[1];
+    size_t original_length;
+    unsigned char *original_shellcode = readShellcodeFromFile(filename, &original_length);
+    if (original_shellcode == NULL) {
+        return 1;
+    }
+    int rot = rand() % 9, dec = rand() & 0xff, ciphertext_len, i;
+    unsigned char *shellcode = (unsigned char *)malloc(original_length);
+    memcpy(shellcode, original_shellcode, original_length);
+    unsigned char *aeskey = (unsigned char *)malloc(EVP_MAX_KEY_LENGTH);
+    unsigned char *iv = (unsigned char *)malloc(EVP_MAX_IV_LENGTH);
+    RAND_bytes(aeskey, EVP_MAX_KEY_LENGTH);
+    RAND_bytes(iv, EVP_MAX_IV_LENGTH);
+    unsigned char *ciphertext = (unsigned char *)malloc(original_length + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
+    unsigned char xorkey[original_length];
+    for (size_t i = 0; i < original_length; i++) {
+        xorkey[i] = rand() & 0xff;
+    }
+    size_t xorkey_length = sizeof(xorkey) / sizeof(xorkey[0]);
+    sanitize_shellcode(shellcode, &original_length);
+    for (i = 0; i < atoi(argv[2]); i++) {
+        xor_encoding(shellcode, original_length, xorkey, xorkey_length);
+        not_encoding(shellcode, original_length);
+        rot_encoding(shellcode, original_length, rot);
+        dec_encoding(shellcode, original_length, dec);
+    }
+    encrypt_aes_cbc(shellcode, original_length, aeskey, iv, ciphertext, &ciphertext_len);
+    printf(CYA "SHELLCODE ENCODED/ENCRYPTED:" RES "\n" BLU "[+]" GRE " Shellcode Length: " RED "%zu " YEL "~> " RED "%d\n", original_length, ciphertext_len);
+    printf(MAG "unsigned char" RES " shellcode[]" YEL " = " RES "{ " RED "\"");
+    format_and_print(ciphertext, ciphertext_len);
+    printf("\" " RES "};\n");
+    printf(MAG "unsigned char" RES " aeskey[]" YEL " = " RES "{ " RED "\"");
+    format_and_print(aeskey, EVP_MAX_KEY_LENGTH);
+    printf("\" " RES "};\n");
+    printf(MAG "unsigned char" RES " iv[]" YEL " = " RES "{ " RED "\"");
+    format_and_print(iv, EVP_MAX_IV_LENGTH);
+    printf("\" " RES "};\n");
+    printf(MAG "unsigned char" RES " xorkey[]" YEL " = " RES "{ " RED "\"");
+    format_and_print(xorkey, sizeof(xorkey));
+    printf("\" " RES "};\n");
+    printf(MAG "int" RES " rot" YEL " = " RED "%d" RES ";\n", rot);
+    printf(MAG "int" RES " dec" YEL " = " RED "%d" RES ";\n", dec);
+    printf(MAG "int" RES " iterations" YEL " = " RED "%d" RES ";\n", atoi(argv[2]));
+    free(shellcode);
+    free(aeskey);
+    free(iv);
+    free(ciphertext);
+    return 0;
 }
