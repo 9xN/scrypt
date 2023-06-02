@@ -6,14 +6,6 @@
 #include <string.h>
 #include <time.h>
 
-#define RED "\033[01;31m"
-#define GRE "\033[01;32m"
-#define YEL "\033[01;33m"
-#define BLU "\033[01;34m"
-#define MAG "\033[01;35m"
-#define CYA "\033[01;36m"
-#define RES "\033[0m"
-
 /* copy paste scrypt output here */
 unsigned char shellcode[] = {/* shellcode */};
 unsigned char aeskey[] = {/* aes key */};
@@ -24,6 +16,14 @@ int dec = /* dec value*/;
 int iterations = /* iterations value */;
 /* ------------------ */
 
+const char *RED = "\033[01;31m";
+const char *GRE = "\033[01;32m";
+const char *YEL = "\033[01;33m";
+const char *BLU = "\033[01;34m";
+const char *MAG = "\033[01;35m";
+const char *CYA = "\033[01;36m";
+const char *RES = "\033[0m";
+
 void handleErrors() {
     ERR_print_errors_fp(stderr);
     abort();
@@ -31,7 +31,7 @@ void handleErrors() {
 
 void print_banner() {
     printf("\033[38;5;16m \033[38;5;16m┌\033[38;5;16m┬\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┌\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┌\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┌\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┬\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┬\033[38;5;16m \033[38;5;16m┬\033[38;5;16m \033[38;5;16m┌\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┌\033[38;5;16m┬\033[38;5;16m┐\n\033[38;5;16m \033[38;5;16m \033[38;5;16m│\033[38;5;16m│\033[38;5;17m \033[38;5;17m├\033[38;5;17m┤\033[38;5;17m \033[38;5;17m \033[38;5;17m└\033[38;5;17m─\033[38;5;17m┐\033[38;5;17m \033[38;5;17m│\033[38;5;17m \033[38;5;17m \033[38;5;17m \033[38;5;17m├\033[38;5;17m┬\033[38;5;17m┘\033[38;5;17m \033[38;5;17m└\033[38;5;17m┬\033[38;5;17m┘\033[38;5;17m \033[38;5;17m├\033[38;5;17m─\033[38;5;17m┘\033[38;5;17m \033[38;5;17m \033[38;5;17m│\033[38;5;17m \n\033[38;5;17m \033[38;5;17m─\033[38;5;17m┴\033[38;5;17m┘\033[38;5;18m \033[38;5;18m└\033[38;5;18m─\033[38;5;18m┘\033[38;5;18m \033[38;5;18m└\033[38;5;18m─\033[38;5;18m┘\033[38;5;18m \033[38;5;18m└\033[38;5;18m─\033[38;5;18m┘\033[38;5;18m \033[38;5;18m┴\033[38;5;18m└\033[38;5;18m─\033[38;5;18m \033[38;5;18m \033[38;5;18m┴\033[38;5;18m \033[38;5;18m \033[38;5;18m┴\033[38;5;18m \033[38;5;18m \033[38;5;18m \033[38;5;18m \033[38;5;18m┴\033[38;5;18m \n");
-    printf(YEL "~> " GRE "Made by: " MAG "github.com/9xN\n" RED "----------------------------" RES "\n" CYA "DECODING/DECRYPTING SHELLCODE...\n");
+    printf("%s~> %sMade by: %sgithub.com/9xN\n%s----------------------------%s\n%sDECODING/DECRYPTING SHELLCODE...\n", YEL, GRE, MAG, RED, RES, CYA);
 }
 
 void xor_encoding(unsigned char *shellcode, size_t length, unsigned char *xorkey, size_t key_length) {
@@ -92,7 +92,7 @@ int main() {
         not_encoding(decrypted_shellcode, decrypted_length);
         xor_encoding(decrypted_shellcode, decrypted_length, xorkey, xorkey_length);
     }
-    printf("SHELLCODE DECODED/DECRYPTED:" RES "\n" RED "");
+    printf("SHELLCODE DECODED/DECRYPTED:%s\n%s", RES, RED);
     format_and_print(decrypted_shellcode, decrypted_length);
     free(ciphertext);
     return 0;

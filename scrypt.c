@@ -6,13 +6,13 @@
 #include <string.h>
 #include <time.h>
 
-#define RED "\033[01;31m"
-#define GRE "\033[01;32m"
-#define YEL "\033[01;33m"
-#define BLU "\033[01;34m"
-#define MAG "\033[01;35m"
-#define CYA "\033[01;36m"
-#define RES "\033[0m"
+const char *RED = "\033[01;31m";
+const char *GRE = "\033[01;32m";
+const char *YEL = "\033[01;33m";
+const char *BLU = "\033[01;34m";
+const char *MAG = "\033[01;35m";
+const char *CYA = "\033[01;36m";
+const char *RES = "\033[0m";
 
 void handleErrors() {
     ERR_print_errors_fp(stderr);
@@ -21,7 +21,7 @@ void handleErrors() {
 
 void print_banner() {
     printf("\033[38;5;16m \033[38;5;16m┌\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┌\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┬\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┬\033[38;5;16m \033[38;5;16m┬\033[38;5;16m \033[38;5;16m┌\033[38;5;16m─\033[38;5;16m┐\033[38;5;16m \033[38;5;16m┌\033[38;5;16m┬\033[38;5;16m┐\n\033[38;5;16m \033[38;5;16m└\033[38;5;16m─\033[38;5;16m┐\033[38;5;17m \033[38;5;17m│\033[38;5;17m \033[38;5;17m \033[38;5;17m \033[38;5;17m├\033[38;5;17m┬\033[38;5;17m┘\033[38;5;17m \033[38;5;17m└\033[38;5;17m┬\033[38;5;17m┘\033[38;5;17m \033[38;5;17m├\033[38;5;17m─\033[38;5;17m┘\033[38;5;17m \033[38;5;17m \033[38;5;17m│\033[38;5;17m\n\033[38;5;17m \033[38;5;17m└\033[38;5;17m─\033[38;5;17m┘\033[38;5;18m \033[38;5;18m└\033[38;5;18m─\033[38;5;18m┘\033[38;5;18m \033[38;5;18m┴\033[38;5;18m└\033[38;5;18m─\033[38;5;18m \033[38;5;18m \033[38;5;18m┴\033[38;5;18m \033[38;5;18m \033[38;5;18m┴\033[38;5;18m \033[38;5;18m \033[38;5;18m \033[38;5;18m \033[38;5;18m┴\033[38;5;18m\n");
-    printf(YEL "~> " GRE "Made by: " MAG "github.com/9xN\n" RED "----------------------------" RES "\n" CYA "ENCODING/ENCRYPTING SHELLCODE...\n");
+    printf("%s~> %sMade by: %sgithub.com/9xN\n%s----------------------------%s\n%sENCODING/ENCRYPTING SHELLCODE...\n", YEL, GRE, MAG, RED, RES, CYA);
 }
 
 unsigned char *readShellcodeFromFile(const char *filename, size_t *original_length) {
@@ -155,22 +155,23 @@ int main(int argc, char *argv[]) {
         dec_encoding(shellcode, original_length, dec);
     }
     encrypt_aes_cbc(shellcode, original_length, aeskey, iv, ciphertext, &ciphertext_len);
-    printf(CYA "SHELLCODE ENCODED/ENCRYPTED:" RES "\n" BLU "[+]" GRE " Shellcode Length: " RED "%zu " YEL "~> " RED "%d\n", original_length, ciphertext_len);
-    printf(MAG "unsigned char" RES " shellcode[]" YEL " = " RES "{ " RED "\"");
+    printf("%sSHELLCODE ENCODED/ENCRYPTED:%s\n%s[+]%s Shellcode Length: %s%zu %s~> %s%d\n", CYA, RES, BLU, GRE, RED, original_length, YEL, RED, ciphertext_len);
+    printf("%sunsigned char%s shellcode[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
     format_and_print(ciphertext, ciphertext_len);
-    printf("\" " RES "};\n");
-    printf(MAG "unsigned char" RES " aeskey[]" YEL " = " RES "{ " RED "\"");
+    printf("\" %s};\n", RES);
+    printf("%sunsigned char%s aeskey[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
     format_and_print(aeskey, EVP_MAX_KEY_LENGTH);
-    printf("\" " RES "};\n");
-    printf(MAG "unsigned char" RES " iv[]" YEL " = " RES "{ " RED "\"");
+    printf("\" %s};\n", RES);
+    printf("%sunsigned char%s iv[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
     format_and_print(iv, EVP_MAX_IV_LENGTH);
-    printf("\" " RES "};\n");
-    printf(MAG "unsigned char" RES " xorkey[]" YEL " = " RES "{ " RED "\"");
+    printf("\" %s};\n", RES);
+    printf("%sunsigned char%s xorkey[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
     format_and_print(xorkey, sizeof(xorkey));
-    printf("\" " RES "};\n");
-    printf(MAG "int" RES " rot" YEL " = " RED "%d" RES ";\n", rot);
-    printf(MAG "int" RES " dec" YEL " = " RED "%d" RES ";\n", dec);
-    printf(MAG "int" RES " iterations" YEL " = " RED "%d" RES ";\n", atoi(argv[2]));
+    printf("\" %s};\n", RES);
+    printf("%sint%s rot%s = %s%d%s;\n", MAG, RES, YEL, RED, rot, RES);
+    printf("%sint%s dec%s = %s%d%s;\n", MAG, RES, YEL, RED, dec, RES);
+    printf("%sint%s iterations%s = %s%d%s;\n", MAG, RES, YEL, RED, atoi(argv[2]), RES);
+
     free(shellcode);
     free(aeskey);
     free(iv);

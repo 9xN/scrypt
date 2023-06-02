@@ -87,7 +87,7 @@ gcc -o scrypt scrypt.c -lcrypto -lssl
 IF THAT DOES NOT WORK TRY THIS:
 
 ```bash
-gcc -o scrypt scrypt.c -I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib -lcrypto -lssl
+/usr/local/bin/gcc-13 -o scrypt scrypt.c -I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib -lcrypto -lssl
 ```
 
 ## Usage
