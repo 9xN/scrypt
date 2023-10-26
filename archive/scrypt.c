@@ -1,6 +1,8 @@
-#include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
 #include <openssl/rand.h>
+#include <openssl/buffer.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,7 +64,44 @@ unsigned char *readShellcodeFromFile(const char *filename, size_t *original_leng
     *original_length = i;
     return shellcode;
 }
+/*
+char* base64_encode(char* plain) {
+    const char base64_map[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+                     'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+                     'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+                     'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
+    char counts = 0;
+    char buffer[3];
+    char* cipher = malloc(strlen(plain) * 4 / 3 + 4);
+    int c = 0;
 
+    for(int i = 0; plain[i] != '\0'; i++) {
+        buffer[counts++] = plain[i];
+        if(counts == 3) {
+            cipher[c++] = base64_map[buffer[0] >> 2];
+            cipher[c++] = base64_map[((buffer[0] & 0x03) << 4) + (buffer[1] >> 4)];
+            cipher[c++] = base64_map[((buffer[1] & 0x0f) << 2) + (buffer[2] >> 6)];
+            cipher[c++] = base64_map[buffer[2] & 0x3f];
+            counts = 0;
+        }
+    }
+
+    if(counts > 0) {
+        cipher[c++] = base64_map[buffer[0] >> 2];
+        if(counts == 1) {
+            cipher[c++] = base64_map[(buffer[0] & 0x03) << 4];
+            cipher[c++] = '=';
+        } else {                      // if counts == 2
+            cipher[c++] = base64_map[((buffer[0] & 0x03) << 4) + (buffer[1] >> 4)];
+            cipher[c++] = base64_map[(buffer[1] & 0x0f) << 2];
+        }
+        cipher[c++] = '=';
+    }
+
+    cipher[c] = '\0';
+    return cipher;
+}
+*/
 void xor_encoding(unsigned char *shellcode, size_t length, unsigned char *xorkey, size_t xorkey_length) {
     for (size_t i = 0; i < length; i++) {
         shellcode[i] ^= xorkey[i % xorkey_length];
@@ -115,10 +154,19 @@ void encrypt_aes_cbc(unsigned char *plaintext, int plaintext_len, unsigned char 
     EVP_CIPHER_CTX_free(ctx);
 }
 
-void format_and_print(unsigned char *shellcode, size_t length) {
-    for (size_t i = 0; i < length; i++) {
-        printf("\\x%02x", shellcode[i]);
+char* format_hex(unsigned char* hex, size_t length) {
+    size_t buffer_size = (length * 4) + 1; // Each byte takes four characters (\xXX)
+    char* formatted_hex = (char*)malloc(buffer_size * sizeof(char));
+    if (formatted_hex == NULL) {
+        fprintf(stderr, "Memory allocation failed.\n");
+        exit(1);
     }
+
+    for (size_t i = 0; i < length; i++) {
+        snprintf(formatted_hex + (i * 4), buffer_size - (i * 4), "\\x%02x", hex[i]);
+    }
+
+    return formatted_hex;
 }
 
 int main(int argc, char *argv[]) {
@@ -134,7 +182,7 @@ int main(int argc, char *argv[]) {
     if (original_shellcode == NULL) {
         return 1;
     }
-    int rot = rand() % 9, dec = rand() & 0xff, ciphertext_len, i;
+    int rot = rand() % 9, dec = rand() & 0xff, ciphertext_len;
     unsigned char *shellcode = (unsigned char *)malloc(original_length);
     memcpy(shellcode, original_shellcode, original_length);
     unsigned char *aeskey = (unsigned char *)malloc(EVP_MAX_KEY_LENGTH);
@@ -148,7 +196,7 @@ int main(int argc, char *argv[]) {
     }
     size_t xorkey_length = sizeof(xorkey) / sizeof(xorkey[0]);
     sanitize_shellcode(shellcode, &original_length);
-    for (i = 0; i < atoi(argv[2]); i++) {
+    for (int i = 0; i < atoi(argv[2]); i++) {
         xor_encoding(shellcode, original_length, xorkey, xorkey_length);
         not_encoding(shellcode, original_length);
         rot_encoding(shellcode, original_length, rot);
@@ -157,21 +205,24 @@ int main(int argc, char *argv[]) {
     encrypt_aes_cbc(shellcode, original_length, aeskey, iv, ciphertext, &ciphertext_len);
     printf("%sSHELLCODE ENCODED/ENCRYPTED:%s\n%s[+]%s Shellcode Length: %s%zu %s~> %s%d\n", CYA, RES, BLU, GRE, RED, original_length, YEL, RED, ciphertext_len);
     printf("%sunsigned char%s shellcode[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
-    format_and_print(ciphertext, ciphertext_len);
-    printf("\" %s};\n", RES);
+    char* formatted_hex = format_hex(ciphertext, ciphertext_len);//base64_encode(format_hex(ciphertext, ciphertext_len));
+    printf("%s\" %s};\n", formatted_hex, RES);
+    //printf("%s", format_hex(ciphertext, ciphertext_len));
     printf("%sunsigned char%s aeskey[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
-    format_and_print(aeskey, EVP_MAX_KEY_LENGTH);
-    printf("\" %s};\n", RES);
+    formatted_hex = format_hex(aeskey, EVP_MAX_KEY_LENGTH);//base64_encode(format_hex(aeskey, EVP_MAX_KEY_LENGTH));
+    printf("%s\" %s};\n", formatted_hex, RES);
+    //printf("%s", format_hex(aeskey, EVP_MAX_KEY_LENGTH));
     printf("%sunsigned char%s iv[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
-    format_and_print(iv, EVP_MAX_IV_LENGTH);
-    printf("\" %s};\n", RES);
+    formatted_hex = format_hex(iv, EVP_MAX_IV_LENGTH);//base64_encode(format_hex(iv, EVP_MAX_IV_LENGTH));
+    printf("%s\" %s};\n", formatted_hex, RES);
+    //printf("%s", format_hex(iv, EVP_MAX_IV_LENGTH));
     printf("%sunsigned char%s xorkey[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
-    format_and_print(xorkey, sizeof(xorkey));
-    printf("\" %s};\n", RES);
+    formatted_hex = format_hex(xorkey, sizeof(xorkey));//base64_encode(format_hex(xorkey, sizeof(xorkey)));
+    printf("%s\" %s};\n", formatted_hex, RES);
+    //printf("%s", format_hex(xorkey, sizeof(xorkey)));
     printf("%sint%s rot%s = %s%d%s;\n", MAG, RES, YEL, RED, rot, RES);
     printf("%sint%s dec%s = %s%d%s;\n", MAG, RES, YEL, RED, dec, RES);
     printf("%sint%s iterations%s = %s%d%s;\n", MAG, RES, YEL, RED, atoi(argv[2]), RES);
-
     free(shellcode);
     free(aeskey);
     free(iv);
