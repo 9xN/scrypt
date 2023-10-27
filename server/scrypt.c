@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../common/aes.h"
+//#include "../common/aes.h"
 #include "../common/aes.c"
 
 #define MAX_SIZE (4ULL * 1024 * 1024 * 1024)
@@ -67,7 +67,6 @@ unsigned char *readShellcodeFromFile(const char *filename, size_t *original_leng
     return shellcode;
 }
 
-
 void xor_encoding(unsigned char *shellcode, size_t length, unsigned char *xorkey, size_t xorkey_length) {
     for (size_t i = 0; i < length; i++) {
         shellcode[i] ^= xorkey[i % xorkey_length];
@@ -105,11 +104,21 @@ void sanitize_shellcode(unsigned char *shellcode, size_t *length) {
     free(sanitized);
 }
 
-void encrypt_aes_cbc(unsigned char *plaintext, int plaintext_len, unsigned char *aeskey, unsigned char *iv, unsigned char *ciphertext, int *ciphertext_len) {
+void encrypt_aes_cbc(unsigned char *shellcode, int shellcode_len, unsigned char *aeskey, unsigned char *iv) {
+    
+    // // Begin test
+    // struct AES_ctx ctx;
+    // AES256CBC_init_ctx_iv(&ctx, key, iv);
+    // AES256CBC_encrypt(&ctx, shellcode, DATA_LEN);
+    // printf("encrypted data:\n");
+    // for (int i = 0; i < DATA_LEN; i++) {
+    //     printf("\\x%02x", (unsigned char)shellcode[i]);
+    // }
+
     struct AES_ctx ctx;
     AES256CBC_init_ctx_iv(&ctx, aeskey, iv);
-    AES256CBC_encrypt(&ctx, plaintext, plaintext_len);
-    *ciphertext_len = plaintext_len;
+    AES256CBC_encrypt(&ctx, shellcode, shellcode_len);
+    //*ciphertext_len = plaintext_len;
 }
 
 // void convertShellcode(const char* shellcode, unsigned char* data, int dataSize) {
@@ -154,10 +163,13 @@ size_t padAndStoreShellcode(unsigned char *shellcode, size_t originalSize) {
     }
     // Convert the shellcode into bytes and store in paddedShellcode
     for (int i = 0; i < paddedSize; i++) {
-        sscanf(shellcode + i * 4, "\\x%02hhx", &paddedShellcode[i]);
+        char hexByte[4];
+        snprintf(hexByte, sizeof(hexByte), "\\x%02hhx", paddedShellcode[i]);
+        sscanf(hexByte, "\\x%02hhx", &paddedShellcode[i]);
     }
     return paddedSize;
 }
+
 
 char* format_hex(unsigned char* hex, size_t length) {
     size_t buffer_size = (length * 4) + 1; // Each byte takes four characters (\xXX)
@@ -187,14 +199,13 @@ int main(int argc, char *argv[]) {
     if (original_shellcode == NULL) {
         return 1;
     }
-    int rot = rand() % 9, dec = rand() & 0xff, ciphertext_len;
+    int rot = rand() % 9, dec = rand() & 0xff;
     unsigned char *shellcode = (unsigned char *)malloc(original_length);
     memcpy(shellcode, original_shellcode, original_length);
-    unsigned char *aeskey = (unsigned char *)malloc(EVP_MAX_KEY_LENGTH);
-    unsigned char *iv = (unsigned char *)malloc(EVP_MAX_IV_LENGTH);
-    RAND_bytes(aeskey, EVP_MAX_KEY_LENGTH);
-    RAND_bytes(iv, EVP_MAX_IV_LENGTH);
-    unsigned char *ciphertext = (unsigned char *)malloc(original_length + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
+    unsigned char *aeskey = (unsigned char *)malloc(32);
+    unsigned char *iv = (unsigned char *)malloc(16);
+    RAND_bytes(aeskey, 32);
+    RAND_bytes(iv, 16);
     unsigned char xorkey[original_length];
     for (size_t i = 0; i < original_length; i++) {
         xorkey[i] = rand() & 0xff;
@@ -227,30 +238,25 @@ int main(int argc, char *argv[]) {
     }
     printf("\n");
     
-    encrypt_aes_cbc(shellcode, paddedSize, aeskey, iv, ciphertext, &ciphertext_len);
-    printf("%sSHELLCODE ENCODED/ENCRYPTED:%s\n%s[+]%s Shellcode Length: %s%zu %s~> %s%d\n", CYA, RES, BLU, GRE, RED, original_length, YEL, RED, ciphertext_len);
+    encrypt_aes_cbc(shellcode, paddedSize, aeskey, iv);
+    printf("%sSHELLCODE ENCODED/ENCRYPTED:%s\n%s[+]%s Shellcode Length: %s%zu %s~> %s%zu\n", CYA, RES, BLU, GRE, RED, original_length, YEL, RED, paddedSize);
     printf("%sunsigned char%s shellcode[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
-    char* formatted_hex = format_hex(ciphertext, ciphertext_len);//base64_encode(format_hex(ciphertext, ciphertext_len));
+    char* formatted_hex = format_hex(shellcode, paddedSize);
     printf("%s\" %s};\n", formatted_hex, RES);
-    //printf("%s", format_hex(ciphertext, ciphertext_len));
     printf("%sunsigned char%s aeskey[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
-    formatted_hex = format_hex(aeskey, EVP_MAX_KEY_LENGTH);//base64_encode(format_hex(aeskey, EVP_MAX_KEY_LENGTH));
+    formatted_hex = format_hex(aeskey, 32);
     printf("%s\" %s};\n", formatted_hex, RES);
-    //printf("%s", format_hex(aeskey, EVP_MAX_KEY_LENGTH));
     printf("%sunsigned char%s iv[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
-    formatted_hex = format_hex(iv, EVP_MAX_IV_LENGTH);//base64_encode(format_hex(iv, EVP_MAX_IV_LENGTH));
+    formatted_hex = format_hex(iv, 16);
     printf("%s\" %s};\n", formatted_hex, RES);
-    //printf("%s", format_hex(iv, EVP_MAX_IV_LENGTH));
     printf("%sunsigned char%s xorkey[]%s = %s{ %s\"", MAG, RES, YEL, RES, RED);
-    formatted_hex = format_hex(xorkey, sizeof(xorkey));//base64_encode(format_hex(xorkey, sizeof(xorkey)));
+    formatted_hex = format_hex(xorkey, sizeof(xorkey));
     printf("%s\" %s};\n", formatted_hex, RES);
-    //printf("%s", format_hex(xorkey, sizeof(xorkey)));
     printf("%sint%s rot%s = %s%d%s;\n", MAG, RES, YEL, RED, rot, RES);
     printf("%sint%s dec%s = %s%d%s;\n", MAG, RES, YEL, RED, dec, RES);
     printf("%sint%s iterations%s = %s%d%s;\n", MAG, RES, YEL, RED, atoi(argv[2]), RES);
     free(shellcode);
     free(aeskey);
     free(iv);
-    free(ciphertext);
     return 0;
 }

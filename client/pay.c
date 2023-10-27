@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../common/aes.h"
+//#include "../common/aes.h"
 #include "../common/aes.c"
 
 #define IV_LEN 16
