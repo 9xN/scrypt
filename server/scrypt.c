@@ -105,51 +105,12 @@ void sanitize_shellcode(unsigned char *shellcode, size_t *length) {
 }
 
 void encrypt_aes_cbc(unsigned char *shellcode, int shellcode_len, unsigned char *aeskey, unsigned char *iv) {
-    
-    // // Begin test
-    // struct AES_ctx ctx;
-    // AES256CBC_init_ctx_iv(&ctx, key, iv);
-    // AES256CBC_encrypt(&ctx, shellcode, DATA_LEN);
-    // printf("encrypted data:\n");
-    // for (int i = 0; i < DATA_LEN; i++) {
-    //     printf("\\x%02x", (unsigned char)shellcode[i]);
-    // }
-
     struct AES_ctx ctx;
     AES256CBC_init_ctx_iv(&ctx, aeskey, iv);
     AES256CBC_encrypt(&ctx, shellcode, shellcode_len);
-    //*ciphertext_len = plaintext_len;
 }
 
-// void convertShellcode(const char* shellcode, unsigned char* data, int dataSize) {
-//     int shellcodeLength = strlen(shellcode) / 4; // Each \x is 4 characters
-
-//     // Initialize the data array with zeros
-//     memset(data, 0, dataSize);
-
-//     // Convert the shellcode into bytes
-//     for (int i = 0; i < shellcodeLength; i++) {
-//         sscanf(shellcode + i * 4, "\\x%02hhx", &data[i]);
-//     }
-// }
-
-// void pad_and_format_print(unsigned char *shellcode, size_t originalSize) {
-//     size_t padding = (16 - (originalSize % 16)) % 16, paddedSize = originalSize + padding;
-//     if (paddedSize > MAX_SIZE) {
-//         printf("Padded size exceeds the maximum size of 4 GB. Adjust your shellcode or padding.\n");
-//         return;
-//     }
-//     unsigned char paddedShellcode[paddedSize];
-//     memcpy(paddedShellcode, shellcode, originalSize);
-//     for (size_t i = originalSize; i < paddedSize; i++) {
-//         paddedShellcode[i] = 0x00;
-//     }
-//     for (size_t i = 0; i < paddedSize; i++) {
-//         printf("\\x%02x", paddedShellcode[i]);
-//     }
-// }
 size_t padAndStoreShellcode(unsigned char *shellcode, size_t originalSize) {
-    // Calculate padding and padded size
     size_t padding = (16 - (originalSize % 16)) % 16, paddedSize = originalSize + padding;
     if (paddedSize > MAX_SIZE) {
         printf("Padded size exceeds the maximum size of 4 GB. Adjust your shellcode or padding.\n");
@@ -159,13 +120,13 @@ size_t padAndStoreShellcode(unsigned char *shellcode, size_t originalSize) {
     unsigned char paddedShellcode[paddedSize];
     memcpy(paddedShellcode, shellcode, originalSize);
     for (size_t i = originalSize; i < paddedSize; i++) {
-        paddedShellcode[i] = 0x00;
+        shellcode[i] = 0x00;
     }
-    // Convert the shellcode into bytes and store in paddedShellcode
-    for (int i = 0; i < paddedSize; i++) {
-        char hexByte[4];
-        snprintf(hexByte, sizeof(hexByte), "\\x%02hhx", paddedShellcode[i]);
-        sscanf(hexByte, "\\x%02hhx", &paddedShellcode[i]);
+    for (size_t i = 0; i < paddedSize; i++) {
+        printf("\\x%02x", shellcode[i]);
+    }
+    for (size_t i = 0; i < paddedSize; i++) {
+        shellcode[i] = paddedShellcode[i];
     }
     return paddedSize;
 }
@@ -178,11 +139,9 @@ char* format_hex(unsigned char* hex, size_t length) {
         fprintf(stderr, "Memory allocation failed.\n");
         exit(1);
     }
-
     for (size_t i = 0; i < length; i++) {
         snprintf(formatted_hex + (i * 4), buffer_size - (i * 4), "\\x%02x", hex[i]);
     }
-
     return formatted_hex;
 }
 
@@ -199,6 +158,7 @@ int main(int argc, char *argv[]) {
     if (original_shellcode == NULL) {
         return 1;
     }
+    printf("original length: %zu\n", original_length);
     int rot = rand() % 9, dec = rand() & 0xff;
     unsigned char *shellcode = (unsigned char *)malloc(original_length);
     memcpy(shellcode, original_shellcode, original_length);
@@ -255,6 +215,7 @@ int main(int argc, char *argv[]) {
     printf("%sint%s rot%s = %s%d%s;\n", MAG, RES, YEL, RED, rot, RES);
     printf("%sint%s dec%s = %s%d%s;\n", MAG, RES, YEL, RED, dec, RES);
     printf("%sint%s iterations%s = %s%d%s;\n", MAG, RES, YEL, RED, atoi(argv[2]), RES);
+    printf("%sint%s shellcodeLength%s = %s%zu%s;\n", MAG, RES, YEL, RED, original_length, RES);
     free(shellcode);
     free(aeskey);
     free(iv);

